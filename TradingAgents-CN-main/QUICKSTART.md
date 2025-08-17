@@ -60,8 +60,8 @@ git clone https://github.com/hsliuping/TradingAgents-CN.git
 cd TradingAgents-CN
 
 # 2. 创建虚拟环境
-python -m venv env
-env\Scripts\activate  # Windows
+python -m venv .venv
+.venv\Scripts\activate  # Windows
 # source env/bin/activate  # Linux/macOS
 
 # 3. 升级pip (重要！避免安装错误)

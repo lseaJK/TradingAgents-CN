@@ -16,6 +16,9 @@ __pycache__/
 frontend
 backend
 
+# 新环境配置文件（防止同步到GitHub）
+新环境需要配置文件/.env
+
 # 系统文件
 .DS_Store
 Thumbs.db
