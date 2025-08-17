@@ -389,9 +389,9 @@ source env/bin/activate
 python -m pip install --upgrade pip
 
 # 4. 安装所有依赖
-pip install -r requirements.txt
-#或者使用pip install -e .
 pip install -e .
+# 用requirements安装方法已弃用
+pip install -r requirements.txt
 
 # 注意：requirements.txt已包含所有必需依赖：
 # - 数据库支持 (MongoDB + Redis)

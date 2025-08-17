@@ -1,27 +1,6 @@
 from tradingagents.graph.trading_graph import TradingAgentsGraph
 from tradingagents.default_config import DEFAULT_CONFIG
 
-# 导入日志模块
-from tradingagents.utils.logging_manager import get_logger
-from datetime import datetime
-logger = get_logger('default')
-
-# Create a custom config
-import os
-config = DEFAULT_CONFIG.copy()
-os.environ['TRADINGAGENTS_LOG_DIR'] = r'E:\my_agent_learning\TradingAgents\results'
-
-
-
-# 股票代码作为变量，便于每次执行不同股票
-import logging
-from pathlib import Path
-
-def get_today_str():
-    from datetime import datetime
-    return datetime.today().strftime('%Y-%m-%d')
-
-
 # 飞书API依赖
 import os
 from pathlib import Path
@@ -29,77 +8,28 @@ from datetime import datetime
 from dotenv import load_dotenv
 import requests
 
-
 # 加载.env配置
 env_path = Path(__file__).parent / '.env'
 if env_path.exists():
     load_dotenv(env_path)
 
-# 飞书表格相关配置（需在.env中配置）
 FEISHU_APP_ID = os.getenv('FEISHU_APP_ID')
 FEISHU_APP_SECRET = os.getenv('FEISHU_APP_SECRET')
 FEISHU_ACCESS_TOKEN = os.getenv('FEISHU_ACCESS_TOKEN')
-FEISHU_APP_TOKEN = "JuW6bVdlYajxlDsVU80cds6Tnxq"  # 飞书表格 app_token（最新创建）
-FEISHU_TABLE_ID = "tblBktnrVWeojVLE"  # 飞书表格 table_id
-FEISHU_TABLE_FIELDS = {
-    'stock_code': '股票代码',
-    'request_date': '请求日期',
-    'status': '当前状态',
-    'reply_link': '回复链接'
-}
 
 def get_feishu_access_token():
     """
-    实时获取飞书AccessToken（每次API请求前都刷新，避免过期）
+    获取飞书AccessToken（如未配置则自动获取）
     """
+    if FEISHU_ACCESS_TOKEN:
+        return FEISHU_ACCESS_TOKEN
     url = "https://open.feishu.cn/open-apis/auth/v3/app_access_token/internal/"
     resp = requests.post(url, json={
         "app_id": FEISHU_APP_ID,
         "app_secret": FEISHU_APP_SECRET
     })
     data = resp.json()
-    token = data.get('app_access_token')
-    if not token:
-        logger.error(f"飞书 access_token 获取失败: {data}")
-    return token
-
-def fetch_pending_tasks_from_feishu_table():
-    """
-    获取飞书表格中待处理（当前状态为空）的任务行
-    """
-    access_token = get_feishu_access_token()
-    headers = {"Authorization": f"Bearer {access_token}"}
-    url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{FEISHU_APP_TOKEN}/tables/{FEISHU_TABLE_ID}/records"
-    resp = requests.get(url, headers=headers)
-    data = resp.json()
-    tasks = []
-    for item in data.get('data', {}).get('items', []):
-        fields = item.get('fields', {})
-        record_id = item.get('record_id')
-        stock_code = fields.get(FEISHU_TABLE_FIELDS['stock_code'])
-        status = fields.get(FEISHU_TABLE_FIELDS['status'])
-        if stock_code and not status:
-            tasks.append({'record_id': record_id, 'stock_code': stock_code})
-    return tasks
-
-def update_feishu_table_row(record_id, request_date, status, reply_link):
-    """
-    更新飞书表格指定行（通过record_id）
-    """
-    access_token = get_feishu_access_token()
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-    url = f"https://open.feishu.cn/open-apis/bitable/v1/apps/{FEISHU_APP_TOKEN}/tables/{FEISHU_TABLE_ID}/records/{record_id}"
-    fields = {
-        FEISHU_TABLE_FIELDS['request_date']: request_date,
-        FEISHU_TABLE_FIELDS['status']: status,
-        FEISHU_TABLE_FIELDS['reply_link']: reply_link
-    }
-    resp = requests.put(url, headers=headers, json={"fields": fields})
-    return resp.json()
-
+    return data.get('app_access_token')
 
 def create_feishu_doc(title, md_content):
     """
@@ -137,7 +67,54 @@ def create_feishu_doc(title, md_content):
         return None
 
 
+# 导入日志模块
+from tradingagents.utils.logging_manager import get_logger
+from datetime import datetime
+logger = get_logger('default')
 
+
+# Create a custom config
+import os
+config = DEFAULT_CONFIG.copy()
+os.environ['TRADINGAGENTS_LOG_DIR'] = r'E:\my_agent_learning\TradingAgents\results'
+
+# Initialize with custom config
+
+
+# 股票代码作为变量，便于每次执行不同股票
+import logging
+from pathlib import Path
+
+def get_today_str():
+    from datetime import datetime
+    return datetime.today().strftime('%Y-%m-%d')
+
+stock_code = input("请输入股票代码（如300059）: ").strip()
+if not stock_code:
+    print("未输入股票代码，程序已退出。")
+    exit(0)
+today_str = get_today_str()
+log_dir = Path(r'E:\my_agent_learning\TradingAgents\results') / stock_code / today_str
+log_dir.mkdir(parents=True, exist_ok=True)
+log_file = log_dir / 'tradingagents.log'
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[logging.FileHandler(log_file, encoding='utf-8')]
+)
+
+ta = TradingAgentsGraph(debug=True, config=config)
+
+
+def get_today_str():
+    return datetime.today().strftime('%Y-%m-%d')
+
+# 示例用法
+today_str = get_today_str() #"2024-05-10"
+# forward propagate
+final_state, decision = ta.propagate(stock_code, today_str)
+
+# Markdown报告输出（极简版）
 from datetime import datetime
 def generate_markdown_report(final_state, decision, stock_symbol):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -207,41 +184,13 @@ def generate_markdown_report(final_state, decision, stock_symbol):
     md += "**仅供参考，投资有风险，决策需谨慎。**\n"
     return md
 
-# 主流程：自动处理飞书表格中的待分析任务
-def main():
-    ta = TradingAgentsGraph(debug=True, config=config)
-    tasks = fetch_pending_tasks_from_feishu_table()
-    for task in tasks:
-        record_id = task['record_id']
-        stock_code = task['stock_code']
-        today_str = get_today_str()
-        # 日志目录
-        log_dir = Path(r'E:\my_agent_learning\TradingAgents\results') / stock_code / today_str
-        log_dir.mkdir(parents=True, exist_ok=True)
-        log_file = log_dir / 'tradingagents.log'
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[logging.FileHandler(log_file, encoding='utf-8')]
-        )
-        try:
-            final_state, decision = ta.propagate(stock_code, today_str)
-            md_report = generate_markdown_report(final_state, decision, stock_code)
-            print(md_report)
-            feishu_title = f"{stock_code}_{today_str}"
-            doc_id = create_feishu_doc(feishu_title, md_report)
-            doc_url = f"https://feishu.cn/docx/{doc_id}" if doc_id else ""
-            update_feishu_table_row(record_id, today_str, "已完成", doc_url)
-            logger.info(f"{stock_code} 分析完成，已更新飞书表格。")
-        except Exception as e:
-            update_feishu_table_row(record_id, today_str, "失败", str(e))
-            logger.error(f"{stock_code} 分析失败: {e}")
+# 输出Markdown报告
+md_report = generate_markdown_report(final_state, decision, stock_code)
+print(md_report)
 
-if __name__ == "__main__":
-    # 打印当前表格基础信息，便于用户查看
-    print("飞书表格信息：")
-    print(f"表格名称: TradingAgents任务表")
-    print(f"表格 app_token: {FEISHU_APP_TOKEN}")
-    print(f"表格 table_id: {FEISHU_TABLE_ID}")
-    print(f"表格链接: https://tcnab3awhbc1.feishu.cn/base/{FEISHU_APP_TOKEN}")
-    # main()
+# 写入飞书文档
+feishu_title = f"{stock_code}_{today_str}"
+create_feishu_doc(feishu_title, md_report)
+
+# Memorize mistakes and reflect
+# ta.reflect_and_remember(1000) # parameter is the position returns
