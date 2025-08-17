@@ -170,6 +170,8 @@ def select_shallow_thinking_agent(provider) -> str:
             ("通义千问 Turbo - 快速响应，适合日常对话", "qwen-turbo"),
             ("通义千问 Plus - 平衡性能和成本", "qwen-plus"),
             ("通义千问 Max - 最强性能", "qwen-max"),
+            ("通义千问3-instruct - 最强性能", "qwen3-235b-a22b-instruct-2507"),
+            ("通义千问3-thinking - 最强性能", "qwen3-235b-a22b-thinking-2507"),
         ],
         "deepseek v3": [
             ("DeepSeek Chat - 通用对话模型，适合股票投资分析", "deepseek-chat"),
