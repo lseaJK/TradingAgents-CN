@@ -1,0 +1,85 @@
+# 环境配置文件 - 包含敏感API密钥，不应提交到版本控制
+.env
+.env.local
+.env.production
+.env.development
+
+# 敏感配置目录
+新环境需要配置文件/
+config/secrets/
+secrets/
+config/.env
+
+# Python 相关
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 虚拟环境
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+logs/
+log/
+
+# 临时文件
+.tmp/
+tmp/
+temp/
+.cache/
+cache/
+
+# 操作系统生成的文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 本地数据和结果（可选）
+# results/
+# data/cache/
+
+# 飞书 Token 文件
+feishu_tokens.json
+*_token.txt
+*_tokens.json
+
+# 备份文件
+*.bak
+*.backup
+*.old
