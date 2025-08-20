@@ -17,6 +17,9 @@ class ConditionalLogic:
 
     def should_continue_market(self, state: AgentState):
         """Determine if market analysis should continue."""
+        # 断点续传：如果tools_market已完成则直接跳过
+        if "tools_market" in state.get("completed_nodes", {}):
+            return "Msg Clear Market"
         messages = state["messages"]
         last_message = messages[-1]
 
@@ -27,6 +30,9 @@ class ConditionalLogic:
 
     def should_continue_social(self, state: AgentState):
         """Determine if social media analysis should continue."""
+        # 断点续传：如果tools_social已完成则直接跳过
+        if "tools_social" in state.get("completed_nodes", {}):
+            return "Msg Clear Social"
         messages = state["messages"]
         last_message = messages[-1]
 
@@ -37,6 +43,9 @@ class ConditionalLogic:
 
     def should_continue_news(self, state: AgentState):
         """Determine if news analysis should continue."""
+        # 断点续传：如果tools_news已完成则直接跳过
+        if "tools_news" in state.get("completed_nodes", {}):
+            return "Msg Clear News"
         messages = state["messages"]
         last_message = messages[-1]
 
@@ -47,6 +56,9 @@ class ConditionalLogic:
 
     def should_continue_fundamentals(self, state: AgentState):
         """Determine if fundamentals analysis should continue."""
+        # 断点续传：如果tools_fundamentals已完成则直接跳过
+        if "tools_fundamentals" in state.get("completed_nodes", {}):
+            return "Msg Clear Fundamentals"
         messages = state["messages"]
         last_message = messages[-1]
 

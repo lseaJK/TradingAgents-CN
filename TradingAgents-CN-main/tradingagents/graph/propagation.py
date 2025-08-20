@@ -43,6 +43,7 @@ class Propagator:
             "fundamentals_report": "",
             "sentiment_report": "",
             "news_report": "",
+            "completed_nodes": [],  # 支持断点续传的已完成节点列表
         }
 
     def get_graph_args(self) -> Dict[str, Any]:

@@ -1,6 +1,6 @@
 # TradingAgents/graph/setup.py
 
-from typing import Dict, Any
+from typing import Dict, Any, Callable
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph, START
 from langgraph.prebuilt import ToolNode
@@ -8,12 +8,47 @@ from langgraph.prebuilt import ToolNode
 from tradingagents.agents import *
 from tradingagents.agents.utils.agent_states import AgentState
 from tradingagents.agents.utils.agent_utils import Toolkit
+from tradingagents.utils.checkpoints import save_checkpoint, mark_node_completed
 
 from .conditional_logic import ConditionalLogic
 
 # 导入统一日志系统
 from tradingagents.utils.logging_init import get_logger
 logger = get_logger("default")
+
+
+def node_with_checkpoint(node_name: str, node_func: Callable):
+    """包装节点函数以支持断点续传功能"""
+    def wrapped_node(state: AgentState):
+        # 检查节点是否已完成
+        completed_nodes = state.get("completed_nodes", {})
+        if node_name in completed_nodes:
+            logger.info(f"⏭️ 跳过已完成的节点: {node_name}")
+            return state
+        
+        try:
+            # 执行原始节点函数
+            result = node_func(state)
+            
+            # 标记节点为已完成
+            if isinstance(result, dict):
+                result = mark_node_completed(result, node_name)
+            else:
+                result = mark_node_completed(state, node_name)
+            
+            # 保存断点
+            save_checkpoint(result)
+            logger.info(f"✅ 节点完成并保存断点: {node_name}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"❌ 节点执行失败: {node_name}, 错误: {e}")
+            # 保存当前状态作为断点
+            save_checkpoint(state)
+            raise
+    
+    return wrapped_node
 
 
 class GraphSetup:
@@ -159,23 +194,24 @@ class GraphSetup:
         # Create workflow
         workflow = StateGraph(AgentState)
 
-        # Add analyst nodes to the graph
+        # Add analyst nodes to the graph with checkpoint support
         for analyst_type, node in analyst_nodes.items():
-            workflow.add_node(f"{analyst_type.capitalize()} Analyst", node)
+            node_name = f"{analyst_type.capitalize()} Analyst"
+            workflow.add_node(node_name, node_with_checkpoint(node_name, node))
             workflow.add_node(
                 f"Msg Clear {analyst_type.capitalize()}", delete_nodes[analyst_type]
             )
             workflow.add_node(f"tools_{analyst_type}", tool_nodes[analyst_type])
 
-        # Add other nodes
-        workflow.add_node("Bull Researcher", bull_researcher_node)
-        workflow.add_node("Bear Researcher", bear_researcher_node)
-        workflow.add_node("Research Manager", research_manager_node)
-        workflow.add_node("Trader", trader_node)
-        workflow.add_node("Risky Analyst", risky_analyst)
-        workflow.add_node("Neutral Analyst", neutral_analyst)
-        workflow.add_node("Safe Analyst", safe_analyst)
-        workflow.add_node("Risk Judge", risk_manager_node)
+        # Add other nodes with checkpoint support
+        workflow.add_node("Bull Researcher", node_with_checkpoint("Bull Researcher", bull_researcher_node))
+        workflow.add_node("Bear Researcher", node_with_checkpoint("Bear Researcher", bear_researcher_node))
+        workflow.add_node("Research Manager", node_with_checkpoint("Research Manager", research_manager_node))
+        workflow.add_node("Trader", node_with_checkpoint("Trader", trader_node))
+        workflow.add_node("Risky Analyst", node_with_checkpoint("Risky Analyst", risky_analyst))
+        workflow.add_node("Neutral Analyst", node_with_checkpoint("Neutral Analyst", neutral_analyst))
+        workflow.add_node("Safe Analyst", node_with_checkpoint("Safe Analyst", safe_analyst))
+        workflow.add_node("Risk Judge", node_with_checkpoint("Risk Judge", risk_manager_node))
 
         # Define edges
         # Start with the first analyst

@@ -321,29 +321,51 @@ class TradingAgentsGraph:
         self.ticker = company_name
         logger.debug(f"🔍 [GRAPH DEBUG] 设置self.ticker: '{self.ticker}'")
 
-        # Initialize state
-        logger.debug(f"🔍 [GRAPH DEBUG] 创建初始状态，传递参数: company_name='{company_name}', trade_date='{trade_date}'")
-        init_agent_state = self.propagator.create_initial_state(
-            company_name, trade_date
-        )
+        # 设置每日每股独立断点路径
+        from pathlib import Path
+        from tradingagents.utils.checkpoints import load_checkpoint, save_checkpoint
+        
+        checkpoint_dir = Path(self.config["results_dir"]) / company_name / trade_date
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        checkpoint_path = checkpoint_dir / "checkpoint.json"
+
+        # 加载 checkpoint 或新建初始状态
+        if checkpoint_path.exists():
+            init_agent_state = load_checkpoint(checkpoint_path)
+            logger.info(f"断点恢复：已加载 checkpoint 状态。")
+        else:
+            init_agent_state = self.propagator.create_initial_state(company_name, trade_date)
+            logger.info(f"未发现 checkpoint，使用新初始状态。")
+        
         logger.debug(f"🔍 [GRAPH DEBUG] 初始状态中的company_of_interest: '{init_agent_state.get('company_of_interest', 'NOT_FOUND')}'")
         logger.debug(f"🔍 [GRAPH DEBUG] 初始状态中的trade_date: '{init_agent_state.get('trade_date', 'NOT_FOUND')}'")
         args = self.propagator.get_graph_args()
 
-        if self.debug:
-            # Debug mode with tracing
-            trace = []
-            for chunk in self.graph.stream(init_agent_state, **args):
-                if len(chunk["messages"]) == 0:
-                    pass
-                else:
-                    chunk["messages"][-1].pretty_print()
-                    trace.append(chunk)
+        try:
+            if self.debug:
+                # Debug mode with tracing
+                trace = []
+                for chunk in self.graph.stream(init_agent_state, **args):
+                    if len(chunk["messages"]) == 0:
+                        pass
+                    else:
+                        chunk["messages"][-1].pretty_print()
+                        trace.append(chunk)
+                    # 每步保存断点
+                    save_checkpoint(checkpoint_path, chunk)
 
-            final_state = trace[-1]
-        else:
-            # Standard mode without tracing
-            final_state = self.graph.invoke(init_agent_state, **args)
+                final_state = trace[-1]
+            else:
+                # Standard mode without tracing
+                final_state = self.graph.invoke(init_agent_state, **args)
+                # 保存最终状态
+                save_checkpoint(checkpoint_path, final_state)
+        except Exception as e:
+            # 异常时保存当前状态
+            logger.error(f"图执行异常: {e}")
+            if 'init_agent_state' in locals():
+                save_checkpoint(checkpoint_path, init_agent_state)
+            raise
 
         # Store current state for reflection
         self.curr_state = final_state
