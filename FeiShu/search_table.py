@@ -1,7 +1,7 @@
 import requests
 
 # 使用刚刚获取的 user_access_token
-access_token = "u-dB4sRVs81aUrECnzj3KIZF5h3rS50h8hMi001k8w2BBq"
+access_token = "u-dB4sRVs81aUrExxxxxxxxx"
 
 def search_documents(access_token, search_key):
     """

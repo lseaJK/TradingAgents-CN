@@ -1,8 +1,8 @@
 import requests
 
 # 使用之前获取的有效 user_access_token
-access_token = "xxx"
-APP_TOKEN = "xxx"
+access_token = "u-dB4sRVs81xxxxxxxx"
+APP_TOKEN = "xxxxxx"
 
 def get_table_id(app_token, access_token):
     """

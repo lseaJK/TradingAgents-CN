@@ -3,8 +3,11 @@ import os
 import os
 import subprocess
 from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()  # 加载 .env 文件
+# 加载主目录的 .env 文件
+env_path = Path(__file__).parent.parent / 'TradingAgents-CN-main' / '.env'
+load_dotenv(env_path)
 
 app_id = os.environ.get("FEISHU_APP_ID")
 app_secret = os.environ.get("FEISHU_APP_SECRET")

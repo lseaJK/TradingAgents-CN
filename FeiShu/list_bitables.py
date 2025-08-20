@@ -1,7 +1,7 @@
 import requests
 
 # 使用当前有效的 user_access_token
-access_token = "xxx"
+access_token = "xxxxxxx"
 
 def list_bitables(access_token):
     """
