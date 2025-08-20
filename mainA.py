@@ -62,8 +62,8 @@ load_dotenv(env_path)
 # 飞书配置
 FEISHU_APP_ID = os.environ.get("FEISHU_APP_ID")
 FEISHU_APP_SECRET = os.environ.get("FEISHU_APP_SECRET")
-TABLE_APP_TOKEN = os.environ.get("TABLE_APP_TOKEN", "SCrXbf2WJaPLV5sqBTOcxzzknWb")
-TABLE_ID = os.environ.get("TABLE_ID", "tblmJhLZBJAaAAPf")
+TABLE_APP_TOKEN = os.environ.get("TABLE_APP_TOKEN", None)
+TABLE_ID = os.environ.get("TABLE_ID", None)
 
 class FeiShuTradingProcessor:
     """飞书表格与TradingAgents集成处理器"""
