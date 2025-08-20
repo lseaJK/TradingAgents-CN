@@ -20,6 +20,12 @@ DEFAULT_CONFIG = {
     "max_recur_limit": 150,
     # Tool settings
     "online_tools": True,
+    
+    # Cleanup settings
+    "cleanup_expired_days": 7,  # 保留最近7天的数据
+    "auto_cleanup": True,  # 是否自动清理过期文件
+    "cleanup_on_startup": False,  # 是否在启动时自动清理
+    "cleanup_checkpoints": True,  # 是否清理过期的断点文件
 
     # Note: Database and cache configuration is now managed by .env file and config.database_manager
     # No database/cache settings in default config to avoid configuration conflicts

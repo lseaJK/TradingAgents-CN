@@ -37,6 +37,7 @@ try:
     from tradingagents.default_config import DEFAULT_CONFIG
     from tradingagents.utils.logging_manager import get_logger
     from tradingagents.utils.checkpoints import clear_checkpoint
+    from tradingagents.utils.cleanup import auto_cleanup
     TRADINGAGENTS_AVAILABLE = True
     print("✅ TradingAgents模块导入成功")
 except ImportError as e:
@@ -205,6 +206,19 @@ class TradingProcessor:
         except Exception as e:
             print(f"❌ 清除断点文件失败: {e}")
     
+    def _format_size(self, size_bytes):
+        """格式化文件大小显示"""
+        if size_bytes == 0:
+            return "0 B"
+        
+        size_names = ["B", "KB", "MB", "GB", "TB"]
+        i = 0
+        while size_bytes >= 1024 and i < len(size_names) - 1:
+            size_bytes /= 1024.0
+            i += 1
+        
+        return f"{size_bytes:.1f} {size_names[i]}"
+    
     def process_stock_analysis(self, stock_code, stock_name="", analysis_date=None, clear_existing_checkpoint=False):
         """处理单个股票分析"""
         print(f"\n🎯 处理股票分析任务")
@@ -228,6 +242,22 @@ class TradingProcessor:
             
             # 保存到本地文件
             file_path = self.save_analysis_to_file(stock_code, stock_name, content, analysis_date)
+            
+            # 执行自动清理（如果启用）
+            try:
+                if self.config.get("auto_cleanup", True):
+                    print("🧹 执行自动清理过期文件...")
+                    cleanup_stats = auto_cleanup(self.config)
+                    if cleanup_stats.get("status") == "success":
+                        total_freed = cleanup_stats.get("total_freed_space", 0)
+                        if total_freed > 0:
+                            print(f"✅ 清理完成，释放空间: {self._format_size(total_freed)}")
+                        else:
+                            print("✅ 清理完成，无过期文件")
+                    elif cleanup_stats.get("status") != "disabled":
+                        print(f"⚠️ 清理过程中出现问题: {cleanup_stats.get('message', '未知错误')}")
+            except Exception as e:
+                print(f"⚠️ 自动清理失败: {e}")
             
             print(f"✅ 股票 {stock_code} 分析完成")
             return {
